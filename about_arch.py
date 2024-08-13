@@ -1,3 +1,5 @@
+import sys
+
 import streamlit as st
 import platform
 
@@ -5,6 +7,7 @@ import platform
 def get_os_details():
     details = {
         "Operating System": platform.system(),
+        "Python Version": sys.version,
         "OS Release": platform.release(),
         "OS Version": platform.version(),
         "Machine": platform.machine(),
