@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 streamlit = "^1.37.1"
-ceylon = {version = "^0.16.3", allow-prereleases = true}
+ceylon = {version = "^0.16.4", allow-prereleases = true}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
