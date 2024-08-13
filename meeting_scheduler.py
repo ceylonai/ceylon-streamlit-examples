@@ -1,5 +1,7 @@
 import asyncio
 import pickle
+import queue
+import threading
 from typing import List
 import streamlit as st
 from loguru import logger
@@ -121,6 +123,7 @@ class Coordinator(CoreAdmin):
 
         if calculated_next_time_slot.is_greater_than(self.next_time_slot):
             self.next_time_slot = calculated_next_time_slot
+            self.output.append(f"Trying next time slot: {self.next_time_slot}")
             await self.broadcast_data(AvailabilityRequest(time_slot=self.next_time_slot))
 
 
@@ -133,6 +136,13 @@ async def run_meeting_scheduler(meeting, participants):
     return coordinator.output
 
 
+def run_scheduler_thread(meeting, participants, result_queue):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    output = loop.run_until_complete(run_meeting_scheduler(meeting, participants))
+    result_queue.put(output)
+
+
 def main():
     st.title("Meeting Scheduler")
 
@@ -143,28 +153,75 @@ def main():
     min_participants = st.slider("Minimum Participants", 2, 10, 3)
 
     st.header("Participants")
-    num_participants = st.slider("Number of Participants", 2, 10, 5)
 
-    participants = []
-    for i in range(num_participants):
-        st.subheader(f"Participant {i + 1}")
-        name = st.text_input(f"Name", f"Participant {i + 1}", key=f"name_{i}")
-        start_time = st.slider(f"Available Start Time", 0, 23, 9, key=f"start_{i}")
-        end_time = st.slider(f"Available End Time", start_time + 1, 24, 17, key=f"end_{i}")
-        participants.append(Participant(name, [TimeSlot(str(meeting_date), start_time, end_time)]))
+    # Initialize session state for participants if it doesn't exist
+    if 'participants' not in st.session_state:
+        st.session_state.participants = []
+
+    # Add new participant
+    with st.expander("Add New Participant"):
+        new_name = st.text_input("Name", f"Participant {len(st.session_state.participants) + 1}")
+        new_start_time = st.slider("Available Start Time", 0, 23, 9)
+        new_end_time = st.slider("Available End Time", new_start_time + 1, 24, 17)
+        if st.button("Add Participant"):
+            st.session_state.participants.append({
+                "name": new_name,
+                "start_time": new_start_time,
+                "end_time": new_end_time
+            })
+            st.success(f"Added {new_name} to the participants list.")
+            st.rerun()
+
+    # Display and manage existing participants
+    for i, participant in enumerate(st.session_state.participants):
+        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+        with col1:
+            st.write(f"**{participant['name']}**")
+        with col2:
+            st.write(f"Start: {participant['start_time']}:00")
+        with col3:
+            st.write(f"End: {participant['end_time']}:00")
+        with col4:
+            if st.button("Remove", key=f"remove_{i}"):
+                st.session_state.participants.pop(i)
+                st.rerun()
 
     if st.button("Schedule Meeting"):
-        meeting = Meeting(name=meeting_name, date=str(meeting_date), duration=meeting_duration,
-                          minimum_participants=min_participants)
+        if len(st.session_state.participants) < min_participants:
+            st.error(f"Not enough participants. Need at least {min_participants}.")
+        else:
+            meeting = Meeting(name=meeting_name, date=str(meeting_date), duration=meeting_duration,
+                              minimum_participants=min_participants)
+            participants = [
+                Participant(p["name"], [TimeSlot(str(meeting_date), p["start_time"], p["end_time"])])
+                for p in st.session_state.participants
+            ]
 
-        with st.spinner("Scheduling meeting..."):
-            output = asyncio.run(run_meeting_scheduler(meeting, participants))
+            result_queue = queue.Queue()
+            scheduler_thread = threading.Thread(target=run_scheduler_thread, args=(meeting, participants, result_queue))
+            scheduler_thread.start()
 
-        st.subheader("Scheduling Results")
-        for line in output:
-            st.write(line)
+            # Create a status area
+            status_area = st.empty()
 
-        st.success("Scheduling complete!")
+            # Display scheduling progress
+            with st.spinner("Scheduling meeting..."):
+                while scheduler_thread.is_alive():
+                    status_area.text("Processing...")
+                    scheduler_thread.join(0.1)  # Wait for 0.1 seconds before checking again
+
+                output = result_queue.get()
+
+                for line in output:
+                    status_area.text(line)
+                    st.write(line)
+                    if "Meeting scheduled:" in line:
+                        st.success("Meeting successfully scheduled!")
+                        break
+                else:
+                    st.warning("Unable to find a suitable time for all participants.")
+
+            st.success("Scheduling process completed!")
 
 
 if __name__ == "__main__":
