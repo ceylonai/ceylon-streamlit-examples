@@ -8,10 +8,10 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 streamlit = "^1.37.1"
-ceylon = "^0.16.3"
+ceylon = {version = "^0.16.3", allow-prereleases = true}
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.build]
@@ -19,3 +19,7 @@ generate-setup-file = false
 
 [tool.poetry.scripts]
 build = "poetry build"
+install-ceylon = "pip install --no-use-pep517 ceylon==0.16.3"
+
+[tool.poetry.dev-dependencies]
+maturin = ">=1.1,<2.0"
