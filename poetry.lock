@@ -235,17 +235,16 @@ files = [
 
 [[package]]
 name = "ceylon"
-version = "0.16.3"
+version = "0.16.4"
 description = "Ceylon is an advanced multi-agent platform specifically developed for Ceylon Aritficial Intelligence."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "ceylon-0.16.3-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:7c9a550a395c1ecf35aab953f3ff8dd6096b7bd254963e6ee0f3256020ddaef8"},
-    {file = "ceylon-0.16.3-py3-none-macosx_11_0_arm64.whl", hash = "sha256:3025010363151f3c55d87857fedfb99f62b10d7ae187db828b888bb35e2e0cb5"},
-    {file = "ceylon-0.16.3-py3-none-manylinux_2_34_x86_64.whl", hash = "sha256:06c7ec0d9afdb33e59f2da113207d7f6191ede9f8a0fbba50238aef6a134ff76"},
-    {file = "ceylon-0.16.3-py3-none-win32.whl", hash = "sha256:ef8682777408715e2299e9534596dbe21dd7a52c6afefb6ff68d4cd86ffb7ebf"},
-    {file = "ceylon-0.16.3-py3-none-win_amd64.whl", hash = "sha256:ffbe799382f67dd8b4f33dea75aac540c2baab88006525211e69cd1421d34c95"},
-    {file = "ceylon-0.16.3.tar.gz", hash = "sha256:0c42e6ecb83ecd54974b7355497f9e4f25b52f5a349092504dba25e61d23571b"},
+    {file = "ceylon-0.16.4-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:58070d3b87a7b94780bb3fa5b9d5dbcf19e99b00df99a3963d6a18511e003dcb"},
+    {file = "ceylon-0.16.4-py3-none-macosx_11_0_arm64.whl", hash = "sha256:6f0203507cea4e1c41125fa9b2c15ce277373283037487569d6a629d7033766b"},
+    {file = "ceylon-0.16.4-py3-none-manylinux_2_34_x86_64.whl", hash = "sha256:dc29dc1c320bccb7721ea8fa06a34da093ee2a82423298714bfd8a9938d7f586"},
+    {file = "ceylon-0.16.4-py3-none-win32.whl", hash = "sha256:e8399f0330d3584051e69bbdf8e8c5517db56bfcadc7c7d5db35045a658336ee"},
+    {file = "ceylon-0.16.4-py3-none-win_amd64.whl", hash = "sha256:340cdb520b9256eb896dd71a104b8fa8c18f94117edbc494bcc5a464e6dfad38"},
 ]
 
 [package.dependencies]
@@ -2592,4 +2591,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "f4af1832bf016f775f350c1d1b62f2929b81c2df32b8977ebc7d6bda11574895"
+content-hash = "46ceb015975c21c8cd7e7006c5abae2a6940b6486eb45491ff14f52eccb075ce"
