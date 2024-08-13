@@ -1,10 +1,10 @@
 import asyncio
 import queue
 import threading
-from typing import List
+
 import streamlit as st
+from ceylon import Agent, on_message
 from pydantic.dataclasses import dataclass
-from ceylon import Agent, CoreAdmin, on_message
 
 admin_port = 8000
 admin_peer = "Auctioneer"
