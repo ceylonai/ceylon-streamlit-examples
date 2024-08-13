@@ -235,17 +235,17 @@ files = [
 
 [[package]]
 name = "ceylon"
-version = "0.16.5"
+version = "0.16.6"
 description = "Ceylon is an advanced multi-agent platform specifically developed for Ceylon Aritficial Intelligence."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "ceylon-0.16.5-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:a218475ccf6dadf6fb818f49fa3de87739b87375b652523f928da9e1bfe5a439"},
-    {file = "ceylon-0.16.5-py3-none-macosx_11_0_arm64.whl", hash = "sha256:3640c63eba9a0d43b5f2a7c2292c948aa38065b8235eea6fe9587d6966abf500"},
-    {file = "ceylon-0.16.5-py3-none-manylinux_2_34_x86_64.whl", hash = "sha256:130979116ad308a37293624c43c37e159364fdfbd19d0786cfa1db2d94a7cad6"},
-    {file = "ceylon-0.16.5-py3-none-win32.whl", hash = "sha256:0d6de459bc20ae37ff56baa9b9baf0793a293583b9d5aeb8b9c7c9c2cc91fa29"},
-    {file = "ceylon-0.16.5-py3-none-win_amd64.whl", hash = "sha256:c27f30c1bfaedab97b7ca2437e1874187e54b36cb6882c96398589c61d5a0d73"},
-    {file = "ceylon-0.16.5.tar.gz", hash = "sha256:a5f2c7c638369cbab4de26740c874c9e84e9b9b209b14e9f05eb5220394cf688"},
+    {file = "ceylon-0.16.6-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:e36d4472ed165b21739b9f9eae5ea6e8a31c59ce0bc1ef95dcfeb0ef241f4ce9"},
+    {file = "ceylon-0.16.6-py3-none-macosx_11_0_arm64.whl", hash = "sha256:b7e90ba20fc5668b47c3bf4f9e315e956df24efaadc763fc692af776c291f047"},
+    {file = "ceylon-0.16.6-py3-none-manylinux_2_34_x86_64.whl", hash = "sha256:280d5d0e76b29949733ea0d82fa2af6145891a4753336e1db6098973da1e92e1"},
+    {file = "ceylon-0.16.6-py3-none-win32.whl", hash = "sha256:fa68cdbf65ff673de93bfc9f74dcdbb0aeadbf7796ab798572ef47bcf2aaf6ba"},
+    {file = "ceylon-0.16.6-py3-none-win_amd64.whl", hash = "sha256:6c572368e5be91ed72d25aa4539f09e8e55fe7dc6965bf0a2af75729d52c6fe1"},
+    {file = "ceylon-0.16.6.tar.gz", hash = "sha256:76ef43d7c0d9e169a065e1da1c8f03ee7bec61888721dab64bca66ad43288745"},
 ]
 
 [package.dependencies]
