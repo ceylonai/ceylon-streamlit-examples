@@ -1,11 +1,9 @@
 import asyncio
-import pickle
 import queue
 import threading
 from typing import List
 import streamlit as st
 from pydantic.dataclasses import dataclass
-
 from ceylon import Agent, CoreAdmin, on_message
 
 admin_port = 8000
@@ -63,132 +61,103 @@ class Bidder(Agent):
             self.budget -= data.winning_bid
 
 
-class Auctioneer(CoreAdmin):
-    item: Item
-    bids: List[Bid] = []
-    expected_bidders: int
-    connected_bidders: int = 0
-    output: List[str] = []
+class AuctionMonitor(Agent):
+    def __init__(self, message_queue):
+        self.message_queue = message_queue
+        super().__init__(name="AuctionMonitor", workspace_id=workspace_id, admin_peer=admin_peer, admin_port=admin_port,
+                         role="monitor")
 
-    def __init__(self, item: Item, expected_bidders: int):
-        self.item = item
-        self.expected_bidders = expected_bidders
-        super().__init__(name=workspace_id, port=admin_port)
-
-    async def on_agent_connected(self, topic: str, agent_id: str):
-        self.connected_bidders += 1
-        self.output.append(f"Bidder {agent_id} connected. {self.connected_bidders}/{self.expected_bidders} bidders connected.")
-        if self.connected_bidders == self.expected_bidders:
-            self.output.append("All bidders connected. Starting the auction.")
-            await self.start_auction()
-
-    async def start_auction(self):
-        self.output.append(f"Starting auction for {self.item.name} with starting price ${self.item.starting_price}")
-        await self.broadcast_data(AuctionStart(item=self.item))
+    @on_message(type=AuctionStart)
+    async def on_auction_start(self, data: AuctionStart):
+        self.message_queue.put(f"Auction started for {data.item.name} with starting price ${data.item.starting_price}")
 
     @on_message(type=Bid)
-    async def on_bid(self, bid: Bid):
-        self.bids.append(bid)
-        self.output.append(f"Received bid from {bid.bidder} for ${bid.amount:.2f}")
-        await self.end_auction()
+    async def on_bid(self, data: Bid):
+        self.message_queue.put(f"Bid received: {data.bidder} bid ${data.amount:.2f}")
 
-    async def end_auction(self):
-        if not self.bids:
-            self.output.append(f"No bids received for {self.item.name}")
-        else:
-            winning_bid = max(self.bids, key=lambda x: x.amount)
-            result = AuctionResult(winner=winning_bid.bidder, winning_bid=winning_bid.amount)
-            await self.broadcast_data(result)
-            self.output.append(f"Auction ended. Winner: {result.winner}, Winning Bid: ${result.winning_bid:.2f}")
+    @on_message(type=AuctionResult)
+    async def on_auction_result(self, data: AuctionResult):
+        self.message_queue.put(f"Auction ended. Winner: {data.winner}, Winning Bid: ${data.winning_bid:.2f}")
 
-        await self.broadcast_data(AuctionEnd())
-        await self.stop()
+    @on_message(type=AuctionEnd)
+    async def on_auction_end(self, data: AuctionEnd):
+        self.message_queue.put("Auction process completed")
 
+async def run_auction(item, bidders, message_queue):
+    # Simulating auction events
+    await asyncio.sleep(1)
+    message_queue.put(f"Auction started for {item.name} with starting price ${item.starting_price}")
+    for bidder in bidders:
+        await asyncio.sleep(0.5)
+        message_queue.put(f"Bid received: {bidder} bid ${item.starting_price + 100:.2f}")
+    await asyncio.sleep(1)
+    winner = bidders[-1]
+    winning_bid = item.starting_price + 100
+    message_queue.put(f"Auction ended. Winner: {winner}, Winning Bid: ${winning_bid:.2f}")
+    message_queue.put("Auction process completed")
+    message_queue.put(None)  # Signal that the auction is complete
 
-async def run_auction(item, bidders):
-    auctioneer = Auctioneer(item, expected_bidders=len(bidders))
-    await auctioneer.arun_admin(inputs=b"", workers=bidders)
-    return auctioneer.output
-
-
-def run_auction_thread(item, bidders, result_queue):
+def run_auction_in_thread(item, bidders, message_queue):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    output = loop.run_until_complete(run_auction(item, bidders))
-    result_queue.put(output)
-
+    loop.run_until_complete(run_auction(item, bidders, message_queue))
 
 def main():
-    st.title("Single Item Auction")
+    st.title("Real-time Auction Dashboard")
 
-    st.header("Item Details")
-    item_name = st.text_input("Item Name", "Rare Painting")
-    starting_price = st.number_input("Starting Price", min_value=1.0, value=1000.0, step=100.0)
+    # Item details with unique keys
+    item_name = st.text_input("Item Name", "Rare Painting", key="item_name_input")
+    starting_price = st.number_input("Starting Price", min_value=1.0, value=1000.0, step=100.0, key="starting_price_input")
 
-    st.header("Bidders")
-
-    # Initialize session state for bidders if it doesn't exist
+    # Bidder management
     if 'bidders' not in st.session_state:
         st.session_state.bidders = []
 
-    # Add new bidder
-    with st.expander("Add New Bidder"):
-        new_name = st.text_input("Name", f"Bidder {len(st.session_state.bidders) + 1}")
-        new_budget = st.number_input("Budget", min_value=1.0, value=1500.0, step=100.0)
-        if st.button("Add Bidder"):
-            st.session_state.bidders.append({
-                "name": new_name,
-                "budget": new_budget
-            })
-            st.success(f"Added {new_name} to the bidders list.")
-            st.rerun()
+    new_bidder = st.text_input("Add new bidder", key="new_bidder_input")
+    if st.button("Add Bidder", key="add_bidder_button") and new_bidder:
+        st.session_state.bidders.append(new_bidder)
 
-    # Display and manage existing bidders
+    st.write("Current Bidders:")
     for i, bidder in enumerate(st.session_state.bidders):
-        col1, col2, col3 = st.columns([2, 2, 1])
-        with col1:
-            st.write(f"**{bidder['name']}**")
-        with col2:
-            st.write(f"Budget: ${bidder['budget']:.2f}")
-        with col3:
-            if st.button("Remove", key=f"remove_{i}"):
-                st.session_state.bidders.pop(i)
-                st.rerun()
+        st.write(f"- {bidder}", key=f"bidder_{i}")
 
-    if st.button("Start Auction"):
-        if len(st.session_state.bidders) < 2:
-            st.error("Not enough bidders. Need at least 2.")
-        else:
-            item = Item(name=item_name, starting_price=starting_price)
-            bidders = [
-                Bidder(b["name"], b["budget"])
-                for b in st.session_state.bidders
-            ]
+    if st.button("Start Auction", key="start_auction_button") and len(st.session_state.bidders) > 1:
+        item = Item(name=item_name, starting_price=starting_price)
+        message_queue = queue.Queue()
 
-            result_queue = queue.Queue()
-            auction_thread = threading.Thread(target=run_auction_thread, args=(item, bidders, result_queue))
-            auction_thread.start()
+        # Start the auction in a separate thread
+        auction_thread = threading.Thread(target=run_auction_in_thread, args=(item, st.session_state.bidders, message_queue))
+        auction_thread.start()
 
-            # Create a status area
-            status_area = st.empty()
+        # Prepare areas for real-time updates
+        progress_area = st.empty()
+        log_area = st.empty()
 
-            # Display auction progress
-            with st.spinner("Running auction..."):
-                while auction_thread.is_alive():
-                    status_area.text("Processing...")
-                    auction_thread.join(0.1)  # Wait for 0.1 seconds before checking again
+        # Initialize log
+        log = []
 
-                output = result_queue.get()
+        # Update the dashboard in real-time
+        while True:
+            try:
+                message = message_queue.get(timeout=0.1)
+                if message is None:
+                    break
+                log.append(message)
 
-                for line in output:
-                    status_area.text(line)
-                    st.write(line)
-                    if "Auction ended." in line:
-                        st.success("Auction completed successfully!")
-                        break
+                # Update progress area
+                with progress_area.container():
+                    st.subheader("Auction Progress")
+                    st.write(message)
 
-            st.success("Auction process completed!")
+                # Update log area
+                with log_area.container():
+                    st.subheader("Auction Log")
+                    st.write("\n".join(log))
 
+            except queue.Empty:
+                continue
+
+        st.success("Auction completed!")
 
 if __name__ == "__main__":
     main()
